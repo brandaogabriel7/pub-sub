@@ -208,8 +208,8 @@ func TestBrokerMessageStorage(t *testing.T) {
 		data  string
 	}{
 		{"topic", "hello world"},
-		// {"topic2", "hello world 2"},
-		// {"another topic", "hello world 3"},
+		{"topic2", "hello world 2"},
+		{"another topic", "hello world 3"},
 	}
 
 	for _, testCase := range testCases {

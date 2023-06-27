@@ -8,4 +8,8 @@ You can check the code coverage for the library by navigating to the `pubsub` mo
 ```shell
 go test -coverprofile=coverage.out ./...
 go tool cover -func coverage.out
+
+# or, if you want to see more details of which lines are not covered, you can do the following and generate an html file
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out -o coverage.html
 ```
