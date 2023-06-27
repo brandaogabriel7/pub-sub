@@ -15,3 +15,15 @@ func (b *Broker[T]) Subscribe(queue string, subscriber chan Message[T]) {
 
 	b.Subscribers[queue] = append(b.Subscribers[queue], subscriber)
 }
+
+func (b *Broker[T]) Publish(queue string, data T) {
+	if b.Subscribers == nil {
+		return
+	}
+
+	go func() {
+		for _, subscriber := range b.Subscribers[queue] {
+			subscriber <- Message[T]{Queue: queue, Data: data}
+		}
+	}()
+}
