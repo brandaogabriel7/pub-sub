@@ -25,6 +25,15 @@ func TestOsFileWriter(t *testing.T) {
 			t.Error(err)
 		}
 
+		data, err := os.ReadFile(testCase.filename)
+		if err != nil {
+			t.Error(err)
+		}
+
+		if string(data) != testCase.entry {
+			t.Errorf("Expected %s, but got %s", testCase.entry, string(data))
+		}
+
 		os.Remove(testCase.filename)
 	}
 }
