@@ -1,7 +1,10 @@
 package pubsub
 
+import "sync"
+
 type Broker[T any] struct {
-	Subscribers map[string][]chan Message[T]
+	mutex       sync.Mutex
+	subscribers map[string][]chan Message[T]
 }
 
 func NewBroker[T any]() *Broker[T] {
@@ -9,21 +12,25 @@ func NewBroker[T any]() *Broker[T] {
 }
 
 func (b *Broker[T]) Subscribe(queue string, subscriber chan Message[T]) {
-	if b.Subscribers == nil {
-		b.Subscribers = make(map[string][]chan Message[T])
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	if b.subscribers == nil {
+		b.subscribers = make(map[string][]chan Message[T])
 	}
 
-	b.Subscribers[queue] = append(b.Subscribers[queue], subscriber)
+	b.subscribers[queue] = append(b.subscribers[queue], subscriber)
 }
 
 func (b *Broker[T]) Publish(queue string, data T) {
-	if b.Subscribers == nil {
-		return
-	}
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
 
-	go func() {
-		for _, subscriber := range b.Subscribers[queue] {
-			subscriber <- Message[T]{Queue: queue, Data: data}
+	if subscribers, found := b.subscribers[queue]; found {
+		for _, subscriber := range subscribers {
+			go func(subscriber chan Message[T]) {
+				subscriber <- Message[T]{Queue: queue, Data: data}
+			}(subscriber)
 		}
-	}()
+	}
 }
