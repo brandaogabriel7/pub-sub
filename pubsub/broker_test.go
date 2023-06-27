@@ -5,7 +5,29 @@ import (
 	"testing"
 
 	"github.com/brandaogabriel7/pubsub"
+	"github.com/brandaogabriel7/pubsub/messages"
 )
+
+type messageStorageMock[T comparable] struct {
+	messagesStored []messages.Message[T]
+}
+
+func (m *messageStorageMock[T]) StoreMessage(message messages.Message[T]) {
+	if m.messagesStored == nil {
+		m.messagesStored = []messages.Message[T]{}
+	}
+	m.messagesStored = append(m.messagesStored, message)
+}
+
+func (m *messageStorageMock[T]) HasStoredMessage(message messages.Message[T]) bool {
+	fmt.Printf("checking if message %v is stored in %v\n", message, m.messagesStored)
+	for _, storedMessage := range m.messagesStored {
+		if storedMessage.Queue == message.Queue && storedMessage.Data == message.Data {
+			return true
+		}
+	}
+	return false
+}
 
 func TestStringBroker(t *testing.T) {
 	var testCases = []struct {
@@ -20,12 +42,12 @@ func TestStringBroker(t *testing.T) {
 	for _, testCase := range testCases {
 		testname := fmt.Sprintf("publish to %s queue", testCase.queue)
 		t.Run(testname, func(t *testing.T) {
-			broker := pubsub.NewBroker[string]()
+			broker := pubsub.NewBroker[string](nil)
 
-			subscribers := []chan pubsub.Message[string]{
-				make(chan pubsub.Message[string]),
-				make(chan pubsub.Message[string]),
-				make(chan pubsub.Message[string]),
+			subscribers := []chan messages.Message[string]{
+				make(chan messages.Message[string]),
+				make(chan messages.Message[string]),
+				make(chan messages.Message[string]),
 			}
 
 			for _, subscriber := range subscribers {
@@ -56,12 +78,12 @@ func TestIntBroker(t *testing.T) {
 	for _, testCase := range testCases {
 		testname := fmt.Sprintf("publish to %s queue", testCase.queue)
 		t.Run(testname, func(t *testing.T) {
-			broker := pubsub.NewBroker[int]()
+			broker := pubsub.NewBroker[int](nil)
 
-			subscribers := []chan pubsub.Message[int]{
-				make(chan pubsub.Message[int]),
-				make(chan pubsub.Message[int]),
-				make(chan pubsub.Message[int]),
+			subscribers := []chan messages.Message[int]{
+				make(chan messages.Message[int]),
+				make(chan messages.Message[int]),
+				make(chan messages.Message[int]),
 			}
 
 			for _, subscriber := range subscribers {
@@ -107,21 +129,21 @@ func TestStructBroker(t *testing.T) {
 			broker := pubsub.NewBroker[struct {
 				Name string
 				Age  int
-			}]()
+			}](nil)
 
-			subscribers := []chan pubsub.Message[struct {
+			subscribers := []chan messages.Message[struct {
 				Name string
 				Age  int
 			}]{
-				make(chan pubsub.Message[struct {
+				make(chan messages.Message[struct {
 					Name string
 					Age  int
 				}]),
-				make(chan pubsub.Message[struct {
+				make(chan messages.Message[struct {
 					Name string
 					Age  int
 				}]),
-				make(chan pubsub.Message[struct {
+				make(chan messages.Message[struct {
 					Name string
 					Age  int
 				}]),
@@ -155,12 +177,12 @@ func TestMultipleMessagesPublishing(t *testing.T) {
 	for _, testCase := range testCases {
 		testname := fmt.Sprintf("publish to %s queue", testCase.queue)
 		t.Run(testname, func(t *testing.T) {
-			broker := pubsub.NewBroker[string]()
+			broker := pubsub.NewBroker[string](nil)
 
-			subscribers := []chan pubsub.Message[string]{
-				make(chan pubsub.Message[string]),
-				make(chan pubsub.Message[string]),
-				make(chan pubsub.Message[string]),
+			subscribers := []chan messages.Message[string]{
+				make(chan messages.Message[string]),
+				make(chan messages.Message[string]),
+				make(chan messages.Message[string]),
 			}
 
 			for _, subscriber := range subscribers {
@@ -175,6 +197,41 @@ func TestMultipleMessagesPublishing(t *testing.T) {
 						t.Errorf("expected message for to be {Queue: \"%s\", Data: \"%s\"}, got %v", testCase.queue, data, message)
 					}
 				}
+			}
+		})
+	}
+}
+
+func TestBrokerMessageStorage(t *testing.T) {
+	var testCases = []struct {
+		queue string
+		data  string
+	}{
+		{"topic", "hello world"},
+		// {"topic2", "hello world 2"},
+		// {"another topic", "hello world 3"},
+	}
+
+	for _, testCase := range testCases {
+		testname := fmt.Sprintf("publish to %s queue", testCase.queue)
+		t.Run(testname, func(t *testing.T) {
+			messageStorage := &messageStorageMock[string]{}
+			broker := pubsub.NewBroker[string](messageStorage)
+
+			subscribers := []chan messages.Message[string]{
+				make(chan messages.Message[string]),
+				make(chan messages.Message[string]),
+				make(chan messages.Message[string]),
+			}
+
+			for _, subscriber := range subscribers {
+				broker.Subscribe(testCase.queue, subscriber)
+			}
+
+			broker.Publish(testCase.queue, testCase.data)
+
+			if !messageStorage.HasStoredMessage(messages.Message[string]{Queue: testCase.queue, Data: testCase.data}) {
+				t.Errorf("expected message %v to be stored", testCase)
 			}
 		})
 	}
