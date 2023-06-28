@@ -2,13 +2,14 @@ package pubsub_test
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/brandaogabriel7/pubsub"
 	"github.com/brandaogabriel7/pubsub/messages"
 )
 
-type messageStorageMock[T comparable] struct {
+type messageStorageMock[T any] struct {
 	messagesStored []messages.Message[T]
 }
 
@@ -21,7 +22,7 @@ func (m *messageStorageMock[T]) StoreMessage(message messages.Message[T]) {
 
 func (m *messageStorageMock[T]) HasStoredMessage(message messages.Message[T]) bool {
 	for _, storedMessage := range m.messagesStored {
-		if storedMessage.Queue == message.Queue && storedMessage.Data == message.Data {
+		if storedMessage.Queue == message.Queue && reflect.DeepEqual(storedMessage.Data, message.Data) {
 			return true
 		}
 	}

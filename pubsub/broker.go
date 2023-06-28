@@ -11,13 +11,13 @@ import (
 // published to that queue and also allows publishers to publish messages to a queue.
 // Broker can be initialized with a message storage implementation. If a message storage is provided, all messages
 // published to a queue will be stored in the storage.
-type Broker[T comparable] struct {
+type Broker[T any] struct {
 	subscribers    *sync.Map
 	messageStorage storage.IMessageStorage[T]
 }
 
 // NewBroker creates a new Broker instance.
-func NewBroker[T comparable](messageStorage storage.IMessageStorage[T]) *Broker[T] {
+func NewBroker[T any](messageStorage storage.IMessageStorage[T]) *Broker[T] {
 	if messageStorage != nil {
 		return &Broker[T]{messageStorage: messageStorage, subscribers: &sync.Map{}}
 	}

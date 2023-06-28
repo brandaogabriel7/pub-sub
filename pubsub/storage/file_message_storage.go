@@ -9,7 +9,7 @@ import (
 )
 
 // FileMessageStorage is an implementation of IMessageStorage that stores messages in files.
-type FileMessageStorage[T comparable] struct {
+type FileMessageStorage[T any] struct {
 	filesMutex map[string]*sync.Mutex
 	fileWriter FileWriter
 }
@@ -38,6 +38,6 @@ func (f *FileMessageStorage[T]) StoreMessage(message messages.Message[T]) {
 }
 
 // NewFileMessageStorage creates a new FileMessageStorage instance.
-func NewFileMessageStorage[T comparable](fileWriter FileWriter) *FileMessageStorage[T] {
+func NewFileMessageStorage[T any](fileWriter FileWriter) *FileMessageStorage[T] {
 	return &FileMessageStorage[T]{filesMutex: make(map[string]*sync.Mutex), fileWriter: fileWriter}
 }
