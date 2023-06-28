@@ -12,7 +12,7 @@ import (
 // Broker can be initialized with a message storage implementation. If a message storage is provided, all messages
 // published to a queue will be stored in the storage.
 type Broker[T comparable] struct {
-	mutex          sync.Mutex
+	sync.RWMutex
 	subscribers    map[string][]chan messages.Message[T]
 	messageStorage storage.IMessageStorage[T]
 }
@@ -20,15 +20,15 @@ type Broker[T comparable] struct {
 // NewBroker creates a new Broker instance.
 func NewBroker[T comparable](messageStorage storage.IMessageStorage[T]) *Broker[T] {
 	if messageStorage != nil {
-		return &Broker[T]{mutex: sync.Mutex{}, messageStorage: messageStorage}
+		return &Broker[T]{RWMutex: sync.RWMutex{}, messageStorage: messageStorage}
 	}
-	return &Broker[T]{mutex: sync.Mutex{}}
+	return &Broker[T]{RWMutex: sync.RWMutex{}}
 }
 
 // Subscribe subscribes a channel to a queue. All messages published to the queue will be sent to the channel.
 func (b *Broker[T]) Subscribe(queue string, subscriber chan messages.Message[T]) {
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
+	b.RLock()
+	defer b.RUnlock()
 
 	if b.subscribers == nil {
 		b.subscribers = make(map[string][]chan messages.Message[T])
@@ -45,8 +45,8 @@ func (b *Broker[T]) Publish(queue string, data T) {
 		b.messageStorage.StoreMessage(message)
 	}
 
-	b.mutex.Lock()
-	defer b.mutex.Unlock()
+	b.RLock()
+	defer b.RUnlock()
 
 	if subscribers, found := b.subscribers[queue]; found {
 		for _, subscriber := range subscribers {
