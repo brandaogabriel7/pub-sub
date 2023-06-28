@@ -45,8 +45,8 @@ func (b *Broker[T]) Publish(queue string, data T) {
 		b.messageStorage.StoreMessage(message)
 	}
 
-	b.RLock()
-	defer b.RUnlock()
+	b.Lock()
+	defer b.Unlock()
 
 	if subscribers, found := b.subscribers[queue]; found {
 		for _, subscriber := range subscribers {
