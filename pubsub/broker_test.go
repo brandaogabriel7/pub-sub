@@ -20,7 +20,6 @@ func (m *messageStorageMock[T]) StoreMessage(message messages.Message[T]) {
 }
 
 func (m *messageStorageMock[T]) HasStoredMessage(message messages.Message[T]) bool {
-	fmt.Printf("checking if message %v is stored in %v\n", message, m.messagesStored)
 	for _, storedMessage := range m.messagesStored {
 		if storedMessage.Queue == message.Queue && storedMessage.Data == message.Data {
 			return true
